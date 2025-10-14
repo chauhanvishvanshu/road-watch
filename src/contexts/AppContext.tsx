@@ -1,13 +1,21 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface Detection {
-  id: string;
+  frame_index: number;
   timestamp: string;
   latitude: number;
   longitude: number;
-  damageType: 'Pothole' | 'Crack' | 'Patch' | 'Debris';
-  severity: 'Low' | 'Medium' | 'High' | 'Critical';
-  depth: number;
+  class_id: number;
+  class_name: string;
+  confidence: number;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  bbox_area_px: number;
+  frame_w: number;
+  frame_h: number;
+  severity: string;
   imageUrl?: string;
 }
 

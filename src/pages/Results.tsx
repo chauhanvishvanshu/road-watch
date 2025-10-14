@@ -38,9 +38,9 @@ const Results = () => {
               <p className="text-3xl font-bold text-warning">{highCount}</p>
             </Card>
             <Card className="p-6">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Avg Depth</p>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Avg Confidence</p>
               <p className="text-3xl font-bold">
-                {(detections.reduce((sum, d) => sum + d.depth, 0) / detections.length).toFixed(1)} cm
+                {(detections.reduce((sum, d) => sum + d.confidence, 0) / detections.length * 100).toFixed(1)}%
               </p>
             </Card>
           </div>

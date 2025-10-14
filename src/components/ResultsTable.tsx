@@ -42,7 +42,7 @@ const ResultsTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [damageTypeFilter, setDamageTypeFilter] = useState<string>('all');
-  const [sortField, setSortField] = useState<'timestamp' | 'severity' | 'depth'>('timestamp');
+  const [sortField, setSortField] = useState<'timestamp' | 'severity' | 'confidence'>('timestamp');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const filteredAndSortedDetections = useMemo(() => {
@@ -52,7 +52,7 @@ const ResultsTable = () => {
     if (searchTerm) {
       filtered = filtered.filter(
         (d) =>
-          d.damageType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          d.class_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           d.severity.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -64,7 +64,7 @@ const ResultsTable = () => {
 
     // Damage type filter
     if (damageTypeFilter !== 'all') {
-      filtered = filtered.filter((d) => d.damageType === damageTypeFilter);
+      filtered = filtered.filter((d) => d.class_name.toLowerCase() === damageTypeFilter.toLowerCase());
     }
 
     // Sorting
@@ -72,12 +72,12 @@ const ResultsTable = () => {
       let comparison = 0;
 
       if (sortField === 'timestamp') {
-        comparison = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-      } else if (sortField === 'depth') {
-        comparison = a.depth - b.depth;
+        comparison = a.frame_index - b.frame_index;
+      } else if (sortField === 'confidence') {
+        comparison = a.confidence - b.confidence;
       } else if (sortField === 'severity') {
-        const severityOrder = { Low: 1, Medium: 2, High: 3, Critical: 4 };
-        comparison = severityOrder[a.severity] - severityOrder[b.severity];
+        const severityOrder: Record<string, number> = { Low: 1, Medium: 2, High: 3, Critical: 4 };
+        comparison = (severityOrder[a.severity] || 0) - (severityOrder[b.severity] || 0);
       }
 
       return sortOrder === 'asc' ? comparison : -comparison;
@@ -86,7 +86,7 @@ const ResultsTable = () => {
     return filtered;
   }, [detections, searchTerm, severityFilter, damageTypeFilter, sortField, sortOrder]);
 
-  const toggleSort = (field: 'timestamp' | 'severity' | 'depth') => {
+  const toggleSort = (field: 'timestamp' | 'severity' | 'confidence') => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -142,10 +142,10 @@ const ResultsTable = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="Pothole">Pothole</SelectItem>
-              <SelectItem value="Crack">Crack</SelectItem>
-              <SelectItem value="Patch">Patch</SelectItem>
-              <SelectItem value="Debris">Debris</SelectItem>
+              <SelectItem value="pothole">Pothole</SelectItem>
+              <SelectItem value="crack">Crack</SelectItem>
+              <SelectItem value="patch">Patch</SelectItem>
+              <SelectItem value="debris">Debris</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -156,8 +156,8 @@ const ResultsTable = () => {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">ID</TableHead>
-                <TableHead className="font-semibold">Damage Type</TableHead>
+                <TableHead className="font-semibold">Frame</TableHead>
+                <TableHead className="font-semibold">Class</TableHead>
                 <TableHead>
                   <Button
                     variant="ghost"
@@ -173,13 +173,14 @@ const ResultsTable = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => toggleSort('depth')}
+                    onClick={() => toggleSort('confidence')}
                     className="font-semibold"
                   >
-                    Depth (cm)
+                    Confidence
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
                 </TableHead>
+                <TableHead className="font-semibold">BBox Area</TableHead>
                 <TableHead className="font-semibold">Location</TableHead>
                 <TableHead>
                   <Button
@@ -188,7 +189,7 @@ const ResultsTable = () => {
                     onClick={() => toggleSort('timestamp')}
                     className="font-semibold"
                   >
-                    Timestamp
+                    Time
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
                 </TableHead>
@@ -197,22 +198,23 @@ const ResultsTable = () => {
             <TableBody>
               {filteredAndSortedDetections.map((detection, index) => (
                 <TableRow
-                  key={detection.id}
+                  key={detection.frame_index}
                   className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
                 >
-                  <TableCell className="font-mono text-sm">#{detection.id}</TableCell>
-                  <TableCell className="font-medium">{detection.damageType}</TableCell>
+                  <TableCell className="font-mono text-sm">#{detection.frame_index}</TableCell>
+                  <TableCell className="font-medium capitalize">{detection.class_name}</TableCell>
                   <TableCell>
                     <Badge variant={getSeverityColor(detection.severity)}>
                       {detection.severity}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-mono">{detection.depth}</TableCell>
+                  <TableCell className="font-mono">{(detection.confidence * 100).toFixed(1)}%</TableCell>
+                  <TableCell className="font-mono text-sm">{detection.bbox_area_px.toLocaleString()}px</TableCell>
                   <TableCell className="text-sm text-muted-foreground font-mono">
-                    {detection.latitude.toFixed(4)}, {detection.longitude.toFixed(4)}
+                    {detection.latitude?.toFixed(4) || 'N/A'}, {detection.longitude?.toFixed(4) || 'N/A'}
                   </TableCell>
-                  <TableCell className="text-sm">
-                    {format(new Date(detection.timestamp), 'PP p')}
+                  <TableCell className="text-sm font-mono">
+                    {detection.timestamp}
                   </TableCell>
                 </TableRow>
               ))}

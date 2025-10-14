@@ -12,19 +12,19 @@ const Dashboard = () => {
   const damageTypeData = [
     {
       name: 'Pothole',
-      count: detections.filter((d) => d.damageType === 'Pothole').length,
+      count: detections.filter((d) => d.class_name === 'pothole').length,
     },
     {
       name: 'Crack',
-      count: detections.filter((d) => d.damageType === 'Crack').length,
+      count: detections.filter((d) => d.class_name === 'crack').length,
     },
     {
       name: 'Patch',
-      count: detections.filter((d) => d.damageType === 'Patch').length,
+      count: detections.filter((d) => d.class_name === 'patch').length,
     },
     {
       name: 'Debris',
-      count: detections.filter((d) => d.damageType === 'Debris').length,
+      count: detections.filter((d) => d.class_name === 'debris').length,
     },
   ];
 

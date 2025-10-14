@@ -8,11 +8,11 @@ import { Bell, Send, AlertTriangle, CheckCircle } from 'lucide-react';
 
 const AlertPanel = () => {
   const { detections } = useApp();
-  const [sentAlerts, setSentAlerts] = useState<Set<string>>(new Set());
+  const [sentAlerts, setSentAlerts] = useState<Set<number>>(new Set());
 
   const criticalDetections = detections.filter((d) => d.severity === 'Critical' || d.severity === 'High');
 
-  const handleSendAlert = (id: string, damageType: string) => {
+  const handleSendAlert = (id: number, damageType: string) => {
     setSentAlerts((prev) => new Set(prev).add(id));
     toast.success('Alert sent successfully!', {
       description: `Authorities notified about ${damageType}`,
@@ -51,33 +51,33 @@ const AlertPanel = () => {
 
       <div className="grid gap-4">
         {criticalDetections.map((detection) => {
-          const isSent = sentAlerts.has(detection.id);
+          const isSent = sentAlerts.has(detection.frame_index);
 
           return (
-            <Card key={detection.id} className="p-6">
+            <Card key={detection.frame_index} className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
-                    <h4 className="font-semibold text-lg">{detection.damageType}</h4>
+                    <h4 className="font-semibold text-lg capitalize">{detection.class_name}</h4>
                     <Badge variant={detection.severity === 'Critical' ? 'destructive' : 'warning' as const}>
                       {detection.severity}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Detected at {new Date(detection.timestamp).toLocaleString()}
+                    Detected at frame #{detection.frame_index} ({detection.timestamp})
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Depth</p>
-                  <p className="text-lg font-semibold">{detection.depth} cm</p>
+                  <p className="text-sm font-medium text-muted-foreground">Confidence</p>
+                  <p className="text-lg font-semibold">{(detection.confidence * 100).toFixed(1)}%</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Location</p>
                   <p className="text-sm font-mono">
-                    {detection.latitude.toFixed(4)}, {detection.longitude.toFixed(4)}
+                    {detection.latitude?.toFixed(4) || 'N/A'}, {detection.longitude?.toFixed(4) || 'N/A'}
                   </p>
                 </div>
               </div>
@@ -89,7 +89,7 @@ const AlertPanel = () => {
                 </div>
               ) : (
                 <Button
-                  onClick={() => handleSendAlert(detection.id, detection.damageType)}
+                  onClick={() => handleSendAlert(detection.frame_index, detection.class_name)}
                   className="w-full"
                   variant="default"
                 >

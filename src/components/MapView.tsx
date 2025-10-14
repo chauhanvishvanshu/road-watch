@@ -79,22 +79,28 @@ const MapView = () => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
-          {detections.map((detection) => (
+          {detections.filter(d => d.latitude && d.longitude).map((detection) => (
             <Marker
-              key={detection.id}
+              key={detection.frame_index}
               position={[detection.latitude, detection.longitude] as L.LatLngExpression}
             >
               <Popup>
-                <div className="p-2 min-w-[200px]">
+                <div className="p-2 min-w-[220px]">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold">{detection.damageType}</h4>
+                    <h4 className="font-semibold capitalize">{detection.class_name}</h4>
                     <Badge variant={getSeverityColor(detection.severity)}>
                       {detection.severity}
                     </Badge>
                   </div>
                   <div className="space-y-1 text-sm">
                     <p>
-                      <span className="font-medium">Depth:</span> {detection.depth} cm
+                      <span className="font-medium">Confidence:</span> {(detection.confidence * 100).toFixed(1)}%
+                    </p>
+                    <p>
+                      <span className="font-medium">Frame:</span> #{detection.frame_index}
+                    </p>
+                    <p>
+                      <span className="font-medium">BBox Area:</span> {detection.bbox_area_px.toLocaleString()}px
                     </p>
                     <p>
                       <span className="font-medium">Location:</span>
@@ -103,10 +109,10 @@ const MapView = () => {
                       {detection.latitude.toFixed(4)}, {detection.longitude.toFixed(4)}
                     </p>
                     <p>
-                      <span className="font-medium">Detected:</span>
+                      <span className="font-medium">Time:</span>
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(detection.timestamp), 'PPp')}
+                      {detection.timestamp}
                     </p>
                   </div>
                 </div>
