@@ -23,15 +23,15 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-sidebar-background border-b border-sidebar-border sticky top-0 z-50 backdrop-blur-sm bg-opacity-95">
+    <nav className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-8">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-glow rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg">
                 <Map className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-sidebar-foreground">RoadWatch</span>
+              <span className="text-xl font-bold text-foreground">RoadWatch</span>
             </Link>
 
             <div className="hidden md:flex space-x-1">
@@ -43,8 +43,8 @@ const Navbar = () => {
                     to={item.href}
                     className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
                       isActive(item.href)
-                        ? 'bg-sidebar-accent text-sidebar-primary font-medium'
-                        : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                        ? 'bg-primary text-primary-foreground font-medium shadow-sm'
+                        : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -56,7 +56,7 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="ghost" size="icon" className="text-sidebar-foreground">
+            <Button variant="ghost" size="icon" className="text-foreground">
               <MessageSquare className="h-5 w-5" />
             </Button>
             {isAuthenticated ? (
@@ -79,7 +79,7 @@ const Navbar = () => {
               variant="ghost"
               size="icon"
               onClick={() => setIsOpen(!isOpen)}
-              className="text-sidebar-foreground"
+              className="text-foreground"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -88,7 +88,7 @@ const Navbar = () => {
       </div>
 
       {isOpen && (
-        <div className="md:hidden border-t border-sidebar-border bg-sidebar-background">
+        <div className="md:hidden border-t border-border bg-card">
           <div className="px-2 pt-2 pb-3 space-y-1">
             {navigation.map((item) => {
               const Icon = item.icon;
@@ -99,8 +99,8 @@ const Navbar = () => {
                   onClick={() => setIsOpen(false)}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
                     isActive(item.href)
-                      ? 'bg-sidebar-accent text-sidebar-primary font-medium'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                      ? 'bg-primary text-primary-foreground font-medium'
+                      : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -108,7 +108,7 @@ const Navbar = () => {
                 </Link>
               );
             })}
-            <div className="pt-2 border-t border-sidebar-border">
+            <div className="pt-2 border-t border-border">
               {isAuthenticated ? (
                 <Button
                   variant="outline"
