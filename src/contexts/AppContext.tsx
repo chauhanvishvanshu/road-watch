@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface Detection {
   frame_index: number;
@@ -30,7 +30,16 @@ interface AppContextType {
   setUploadProgress: (progress: number) => void;
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+const AppContext = createContext<AppContextType>({
+  detections: [],
+  setDetections: () => {},
+  isAuthenticated: false,
+  setIsAuthenticated: () => {},
+  currentVideo: null,
+  setCurrentVideo: () => {},
+  uploadProgress: 0,
+  setUploadProgress: () => {},
+});
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [detections, setDetections] = useState<Detection[]>([]);
