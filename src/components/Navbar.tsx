@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Map, Upload, BarChart3, FileText, MessageSquare, LogIn, LogOut } from 'lucide-react';
+import { Menu, X, Map, Home, BarChart3, FileText, MessageSquare, LogIn, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 
@@ -10,10 +10,10 @@ const Navbar = () => {
   const { isAuthenticated, setIsAuthenticated } = useApp();
 
   const navigation = [
-    { name: 'Home', href: '/', icon: Map },
-    { name: 'Upload', href: '/upload', icon: Upload },
+    { name: 'Home', href: '/', icon: Home },
     { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
     { name: 'Reports', href: '/reports', icon: FileText },
+    { name: 'Results', href: '/results', icon: Map },
   ];
 
   const isActive = (path: string) => location.pathname === path;
