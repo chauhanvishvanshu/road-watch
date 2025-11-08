@@ -10,10 +10,10 @@ const Navbar = () => {
   const { isAuthenticated, setIsAuthenticated } = useApp();
 
   const navigation = [
-    { name: 'Upload', href: '/', icon: Upload },
+    { name: 'Home', href: '/', icon: Map },
+    { name: 'Upload', href: '/upload', icon: Upload },
     { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
     { name: 'Reports', href: '/reports', icon: FileText },
-    { name: 'Results', href: '/results', icon: Map },
   ];
 
   const isActive = (path: string) => location.pathname === path;
