@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Map, Upload, BarChart3, Bell, MessageSquare, LogIn, LogOut } from 'lucide-react';
+import { Menu, X, Map, Upload, BarChart3, FileText, MessageSquare, LogIn, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 
@@ -11,9 +11,9 @@ const Navbar = () => {
 
   const navigation = [
     { name: 'Upload', href: '/', icon: Upload },
-    { name: 'Results', href: '/results', icon: Map },
     { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
-    { name: 'Alerts', href: '/alerts', icon: Bell },
+    { name: 'Reports', href: '/reports', icon: FileText },
+    { name: 'Results', href: '/results', icon: Map },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -31,7 +31,7 @@ const Navbar = () => {
               <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg">
                 <Map className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-foreground">RoadWatch</span>
+              <span className="text-xl font-bold text-foreground">Road Watch</span>
             </Link>
 
             <div className="hidden md:flex space-x-1">

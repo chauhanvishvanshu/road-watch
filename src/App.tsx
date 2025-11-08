@@ -6,8 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "@/contexts/AppContext";
 import Upload from "./pages/Upload";
 import Results from "./pages/Results";
-import Alerts from "./pages/Alerts";
 import Dashboard from "./pages/Dashboard";
+import Reports from "./pages/Reports";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -21,9 +21,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Upload />} />
-          <Route path="/results" element={<Results />} />
-          <Route path="/alerts" element={<Alerts />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/results" element={<Results />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

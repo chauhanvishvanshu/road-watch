@@ -1,160 +1,220 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
 import Navbar from '@/components/Navbar';
-import ChatbotPanel from '@/components/ChatbotPanel';
 import { Card } from '@/components/ui/card';
-import { useApp } from '@/contexts/AppContext';
-import { TrendingUp, AlertTriangle, CheckCircle, Activity } from 'lucide-react';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { apiService } from '@/lib/api';
+import { Upload, Download, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+
+interface DetectionStats {
+  detections?: number;
+  total_area?: number;
+  avg_confidence?: number;
+}
 
 const Dashboard = () => {
-  const { detections } = useApp();
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [processing, setProcessing] = useState(false);
+  const [detectionStats, setDetectionStats] = useState<DetectionStats>({});
+  const [videoFeedKey, setVideoFeedKey] = useState(0);
 
-  // Prepare chart data
-  const damageTypeData = [
-    {
-      name: 'Pothole',
-      count: detections.filter((d) => d.class_name === 'pothole').length,
-    },
-    {
-      name: 'Crack',
-      count: detections.filter((d) => d.class_name === 'crack').length,
-    },
-    {
-      name: 'Patch',
-      count: detections.filter((d) => d.class_name === 'patch').length,
-    },
-    {
-      name: 'Debris',
-      count: detections.filter((d) => d.class_name === 'debris').length,
-    },
-  ];
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) return;
+    
+    const file = acceptedFiles[0];
+    
+    try {
+      setUploading(true);
+      setUploadProgress(0);
+      
+      await apiService.uploadVideo(file, (progressEvent: any) => {
+        const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        setUploadProgress(progress);
+      });
+      
+      toast.success('Video uploaded successfully!');
+      setUploading(false);
+      setProcessing(true);
+      setVideoFeedKey(prev => prev + 1); // Force refresh video feed
+      
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload video');
+      setUploading(false);
+    }
+  }, []);
 
-  const severityData = [
-    {
-      name: 'Critical',
-      count: detections.filter((d) => d.severity === 'Critical').length,
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'video/*': ['.mp4', '.avi', '.mov', '.mkv'],
     },
-    {
-      name: 'High',
-      count: detections.filter((d) => d.severity === 'High').length,
-    },
-    {
-      name: 'Medium',
-      count: detections.filter((d) => d.severity === 'Medium').length,
-    },
-    {
-      name: 'Low',
-      count: detections.filter((d) => d.severity === 'Low').length,
-    },
-  ];
+    maxFiles: 1,
+    disabled: uploading || processing,
+  });
+
+  // Polling for processing status and detection stats
+  useEffect(() => {
+    if (!processing) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const [statusData, countData] = await Promise.all([
+          apiService.getProcessingStatus(),
+          apiService.getDetectionCount(),
+        ]);
+
+        if (statusData.processing === false) {
+          setProcessing(false);
+          toast.success('Video processing completed!');
+        }
+
+        setDetectionStats(countData);
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [processing]);
+
+  const handleExportCsv = async () => {
+    try {
+      const blob = await apiService.exportCsv();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `detections_${new Date().getTime()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('CSV exported successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export CSV');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Analytics Dashboard</h1>
+          <h1 className="text-4xl font-bold mb-2">Processing Dashboard</h1>
           <p className="text-muted-foreground">
-            Comprehensive overview of road damage detections and trends
+            Upload videos and monitor real-time detection processing
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid gap-6 mb-8">
+          {/* Upload Area */}
           <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Activity className="h-6 w-6 text-primary" />
-              </div>
-              <TrendingUp className="h-5 w-5 text-success" />
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer
+                ${isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}
+                ${(uploading || processing) ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <input {...getInputProps()} />
+              <Upload className={`h-12 w-12 mx-auto mb-4 ${isDragActive ? 'text-primary' : 'text-muted-foreground'}`} />
+              {uploading ? (
+                <div>
+                  <p className="text-lg font-semibold mb-4">Uploading video...</p>
+                  <Progress value={uploadProgress} className="w-full max-w-md mx-auto" />
+                  <p className="text-sm text-muted-foreground mt-2">{uploadProgress}%</p>
+                </div>
+              ) : processing ? (
+                <div>
+                  <p className="text-lg font-semibold text-primary">Processing video...</p>
+                  <p className="text-sm text-muted-foreground mt-2">Please wait while we analyze the video</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-lg font-semibold mb-2">
+                    {isDragActive ? 'Drop video here' : 'Drag & drop video or click to browse'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Supports MP4, AVI, MOV, MKV formats
+                  </p>
+                </div>
+              )}
             </div>
-            <h3 className="text-2xl font-bold mb-1">{detections.length}</h3>
-            <p className="text-sm text-muted-foreground">Total Detections</p>
           </Card>
 
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-lg bg-destructive/10 flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
+          {/* Video Feed */}
+          {processing && (
+            <Card className="p-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Live Processing Feed
+              </h3>
+              <div className="bg-black rounded-lg overflow-hidden">
+                <img
+                  key={videoFeedKey}
+                  src={apiService.getVideoFeedUrl()}
+                  alt="Video processing feed"
+                  className="w-full h-auto"
+                  onError={(e) => {
+                    console.error('Video feed error');
+                  }}
+                />
               </div>
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-            </div>
-            <h3 className="text-2xl font-bold mb-1">
-              {detections.filter((d) => d.severity === 'Critical').length}
-            </h3>
-            <p className="text-sm text-muted-foreground">Critical Issues</p>
-          </Card>
+            </Card>
+          )}
 
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-success" />
+          {/* Detection Stats */}
+          {(processing || detectionStats.detections !== undefined) && (
+            <Card className="p-6">
+              <h3 className="font-semibold mb-4">Detection Statistics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 rounded-lg bg-muted">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertCircle className="h-5 w-5 text-primary" />
+                    <p className="text-sm font-medium">Total Detections</p>
+                  </div>
+                  <p className="text-3xl font-bold">{detectionStats.detections || 0}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-muted">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <p className="text-sm font-medium">Total Area (px)</p>
+                  </div>
+                  <p className="text-3xl font-bold">
+                    {detectionStats.total_area?.toFixed(0) || 0}
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg bg-muted">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                    <p className="text-sm font-medium">Avg Confidence</p>
+                  </div>
+                  <p className="text-3xl font-bold">
+                    {detectionStats.avg_confidence
+                      ? `${(detectionStats.avg_confidence * 100).toFixed(1)}%`
+                      : 'N/A'}
+                  </p>
+                </div>
               </div>
-              <CheckCircle className="h-5 w-5 text-success" />
-            </div>
-            <h3 className="text-2xl font-bold mb-1">
-              {detections.length > 0
-                ? ((detections.filter((d) => d.severity === 'Low').length / detections.length) * 100).toFixed(0)
-                : 0}
-              %
-            </h3>
-            <p className="text-sm text-muted-foreground">Low Severity</p>
-          </Card>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card className="p-6">
-            <h3 className="font-semibold mb-4">Damage by Type</h3>
-            {detections.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={damageTypeData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="name" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                No data available
+              <div className="flex gap-3">
+                <Button onClick={handleExportCsv} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/reports" className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    View Reports
+                  </Link>
+                </Button>
               </div>
-            )}
-          </Card>
-
-          <Card className="p-6">
-            <h3 className="font-semibold mb-4">Damage by Severity</h3>
-            {detections.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={severityData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="name" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Bar dataKey="count" fill="hsl(var(--warning))" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                No data available
-              </div>
-            )}
-          </Card>
-        </div>
-
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">AI Assistant</h2>
-          <ChatbotPanel />
+            </Card>
+          )}
         </div>
       </main>
     </div>
